@@ -12,21 +12,24 @@ namespace wLib.UIStack
 
         public AddressableWidgetFactory()
         {
-            var databases = Resources.FindObjectsOfTypeAll<WidgetDatabaseContainer>();
+            var databases = Resources.LoadAll("", typeof(WidgetDatabaseContainer));
             for (var i = 0; i < databases.Length; i++)
             {
-                var database = databases[i];
-                var datas = JsonUtility.FromJson<WidgetDatabase>(database.JsonData);
-                var addresses = datas.Addresses;
-                for (var j = 0; j < addresses.Count; j++)
+                var database = databases[i] as WidgetDatabaseContainer;
+                if (database != null)
                 {
-                    var data = addresses[j];
-                    if (WidgetLookupDictionary.ContainsKey(data.Name))
+                    var datas = JsonUtility.FromJson<WidgetDatabase>(database.JsonData);
+                    var addresses = datas.Addresses;
+                    for (var j = 0; j < addresses.Count; j++)
                     {
-                        Debug.LogErrorFormat("Widget called [{0}] has duplicated defined.", data.Name);
-                    }
+                        var data = addresses[j];
+                        if (WidgetLookupDictionary.ContainsKey(data.Name))
+                        {
+                            Debug.LogErrorFormat("Widget called [{0}] has duplicated defined.", data.Name);
+                        }
 
-                    WidgetLookupDictionary[data.Name] = data.Path;
+                        WidgetLookupDictionary[data.Name] = data.Path;
+                    }
                 }
             }
         }
