@@ -225,7 +225,7 @@ namespace wLib.UIStack
                     var att = atts[0] as CustomWidgetFactoryAttribute;
                     if (att != null)
                     {
-                        Debug.Log("Collect " + att.WidgetType);
+//                        Debug.Log("Collect " + att.WidgetType);
                         var factoryInstance = Activator.CreateInstance(factoryType) as IWidgetFactory;
                         RegisterFactory(att.WidgetType, factoryInstance);
                     }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace wLib.UIStack
 {
-    public class BaseWidget : MonoBehaviour
+    public class BaseWidget : MonoBehaviour, IWidgetLife
     {
         public int Id { get; private set; }
 

@@ -5,30 +5,6 @@ using UnityEngine;
 
 namespace wLib.UIStack
 {
-    [Serializable]
-    public struct WidgetDatabase
-    {
-        public List<WidgetAddress> Addresses;
-
-        public WidgetDatabase(List<WidgetAddress> addresses)
-        {
-            Addresses = addresses;
-        }
-    }
-
-    [Serializable]
-    public struct WidgetAddress
-    {
-        public string Name;
-        public string Path;
-
-        public WidgetAddress(string name, string path)
-        {
-            Name = name;
-            Path = path;
-        }
-    }
-
     [CustomWidgetFactory(typeof(AddressableWidget))]
     public class AddressableWidgetFactory : IWidgetFactory<AddressableWidget>
     {
@@ -36,13 +12,22 @@ namespace wLib.UIStack
 
         public AddressableWidgetFactory()
         {
-            var database = Resources.Load<TextAsset>("UI Widget Database");
-            var datas = JsonUtility.FromJson<WidgetDatabase>(database.text);
-            var addresses = datas.Addresses;
-            for (var i = 0; i < addresses.Count; i++)
+            var databases = Resources.FindObjectsOfTypeAll<WidgetDatabaseContainer>();
+            for (var i = 0; i < databases.Length; i++)
             {
-                var data = addresses[i];
-                WidgetLookupDictionary.Add(data.Name, data.Path);
+                var database = databases[i];
+                var datas = JsonUtility.FromJson<WidgetDatabase>(database.JsonData);
+                var addresses = datas.Addresses;
+                for (var j = 0; j < addresses.Count; j++)
+                {
+                    var data = addresses[j];
+                    if (WidgetLookupDictionary.ContainsKey(data.Name))
+                    {
+                        Debug.LogErrorFormat("Widget called [{0}] has duplicated defined.", data.Name);
+                    }
+
+                    WidgetLookupDictionary[data.Name] = data.Path;
+                }
             }
         }
 
