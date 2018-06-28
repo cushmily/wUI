@@ -53,7 +53,9 @@ namespace wLib.UIStack
 
                 var layerCanvaseScaler = layerObj.AddComponent<CanvasScaler>();
                 layerCanvaseScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                layerCanvaseScaler.referenceResolution = refResolution ?? new Vector2(1920, 1080);
+                layerCanvaseScaler.referenceResolution = refResolution ?? (landscapeOrientation
+                                                             ? new Vector2(1920, 1080)
+                                                             : new Vector2(1080, 1920));
                 layerCanvaseScaler.matchWidthOrHeight = landscapeOrientation ? 1 : 0;
 
                 var layerRaycaster = layerObj.AddComponent<GraphicRaycaster>();
