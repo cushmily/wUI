@@ -26,7 +26,7 @@ namespace wLib.UIStack
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
 
-        public static UIManager BuildHirerachy()
+        public static UIManager BuildHirerachy(bool landscapeOrientation = true, Vector2? refResolution = null)
         {
             CollectFactories();
 
@@ -53,8 +53,8 @@ namespace wLib.UIStack
 
                 var layerCanvaseScaler = layerObj.AddComponent<CanvasScaler>();
                 layerCanvaseScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                layerCanvaseScaler.referenceResolution = new Vector2(1920, 1080);
-                layerCanvaseScaler.matchWidthOrHeight = 1;
+                layerCanvaseScaler.referenceResolution = refResolution ?? new Vector2(1920, 1080);
+                layerCanvaseScaler.matchWidthOrHeight = landscapeOrientation ? 1 : 0;
 
                 var layerRaycaster = layerObj.AddComponent<GraphicRaycaster>();
                 layerRaycaster.name = layer.ToString();
