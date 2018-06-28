@@ -76,6 +76,26 @@ namespace wLib.UIStack
 
         private int _componentId;
 
+        public void Push(string widgetName)
+        {
+            Push<BaseWidget>(widgetName, UIMessage.Empty, null);
+        }
+
+        public void Push(string widgetName, Action<int> onCreated)
+        {
+            Push<BaseWidget>(widgetName, UIMessage.Empty, onCreated);
+        }
+
+        public void Push(string widgetName, UIMessage message)
+        {
+            Push<BaseWidget>(widgetName, message, null);
+        }
+
+        public void Push(string widgetName, UIMessage message, Action<int> onCreated)
+        {
+            Push<BaseWidget>(widgetName, message, onCreated);
+        }
+
         public void Push<TWidget>(string widgetName) where TWidget : BaseWidget
         {
             Push<TWidget>(widgetName, UIMessage.Empty, null);

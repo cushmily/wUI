@@ -31,6 +31,6 @@ namespace wLib.UIStack
     [CreateAssetMenu(menuName = "wLib/UIStack/New Database")]
     public class WidgetDatabaseContainer : ScriptableObject
     {
-        public string JsonData;
+        public string JsonData = "{}";
     }
 }

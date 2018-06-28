@@ -18,7 +18,7 @@ namespace wLib
         private void OnEnable()
         {
             _container = target as WidgetDatabaseContainer;
-            LoadFromJson();
+            if (_container != null) { LoadFromJson(); }
         }
 
         public override void OnInspectorGUI()

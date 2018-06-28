@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace wLib.UIStack
 {
-    public class ViewWidget : AddressableWidget
+    public abstract class ViewWidget : AddressableWidget
     {
         public event Action<UIMessage> OnShowAction;
         public event Action OnHideAction;
