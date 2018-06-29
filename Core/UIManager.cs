@@ -98,6 +98,26 @@ namespace wLib.UIStack
             Push<BaseWidget>(widgetName, message, onCreated);
         }
 
+        public void Push<TWidget>() where TWidget : BaseWidget
+        {
+            Push<TWidget>(null, UIMessage.Empty, null);
+        }
+
+        public void Push<TWidget>(Action<int> onCreated) where TWidget : BaseWidget
+        {
+            Push<TWidget>(null, UIMessage.Empty, onCreated);
+        }
+
+        public void Push<TWidget>(UIMessage message) where TWidget : BaseWidget
+        {
+            Push<TWidget>(null, message, null);
+        }
+
+        public void Push<TWidget>(UIMessage message, Action<int> onCreated) where TWidget : BaseWidget
+        {
+            Push<TWidget>(null, UIMessage.Empty, null);
+        }
+
         public void Push<TWidget>(string widgetName) where TWidget : BaseWidget
         {
             Push<TWidget>(widgetName, UIMessage.Empty, null);
@@ -268,9 +288,10 @@ namespace wLib.UIStack
                     FactoryLookup.TryGetValue(resolveType, out factory);
                     if (factory != null)
                     {
-                        Debug.LogWarningFormat(
-                            "Widget factory not found for type: {0}, fallback to factory: {1}.",
-                            typeof(T), factory);
+                        //Too annoying.
+//                        Debug.LogWarningFormat(
+//                            "Widget factory not found for type: {0}, fallback to factory: {1}.",
+//                            typeof(T), factory);
                     }
                 }
 

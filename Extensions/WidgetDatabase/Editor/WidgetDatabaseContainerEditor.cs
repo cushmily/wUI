@@ -118,7 +118,7 @@ namespace wLib
             }
 
             _container.JsonData = JsonUtility.ToJson(database);
-            EditorUtility.SetDirty(this);
+            EditorUtility.SetDirty(_container);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 

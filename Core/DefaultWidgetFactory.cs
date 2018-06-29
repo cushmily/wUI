@@ -9,7 +9,7 @@ namespace wLib.UIStack
         public void CreateInstance(IUIManager manager, string widgetPath, int assignedId,
             Action<BaseWidget> onCreated)
         {
-            var widget = UnityEngine.Object.Instantiate(Resources.Load<BaseWidget>(widgetPath));
+            var widget = UnityEngine.Object.Instantiate(Resources.Load<BaseWidget>(widgetPath ?? string.Empty));
             widget.SetManagerInfo(assignedId, manager);
 
             if (onCreated != null) { onCreated.Invoke(widget); }

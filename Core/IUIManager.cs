@@ -11,7 +11,7 @@ namespace wLib.UIStack
         void Push(string widgetName, UIMessage message);
 
         void Push(string widgetName, UIMessage message, Action<int> onCreated);
-
+        
         void Push<TWidget>(string widgetName) where TWidget : BaseWidget;
 
         void Push<TWidget>(string widgetName, Action<int> onCreated) where TWidget : BaseWidget;

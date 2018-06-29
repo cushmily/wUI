@@ -34,16 +34,27 @@ namespace wLib.UIStack
             }
         }
 
-        public void CreateInstance(IUIManager manager, string widgetName, int assignedId, Action<BaseWidget> onCreated)
+        public virtual void CreateInstance(IUIManager manager, string widgetName, int assignedId,
+            Action<BaseWidget> onCreated)
         {
             CreateInstance(manager, widgetName, assignedId, (AddressableWidget widget) => onCreated.Invoke(widget));
         }
 
-        public void CreateInstance(IUIManager manager, string widgetName, int assignedId,
+        public virtual void CreateInstance(IUIManager manager, string widgetName, int assignedId,
             Action<AddressableWidget> onCreated)
         {
             string widgetPath;
-            if (!WidgetLookupDictionary.TryGetValue(widgetName, out widgetPath))
+
+            if (widgetName == null)
+            {
+                if (WidgetLookupDictionary.Count > 0) { widgetPath = WidgetLookupDictionary.FirstOrDefault().Value; }
+                else
+                {
+                    Debug.LogError("No such kind of widget was found.");
+                    return;
+                }
+            }
+            else if (!WidgetLookupDictionary.TryGetValue(widgetName, out widgetPath))
             {
                 Debug.LogErrorFormat("Widget[{0}] not found.", widgetName);
                 return;

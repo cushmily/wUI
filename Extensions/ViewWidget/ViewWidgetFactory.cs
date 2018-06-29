@@ -9,11 +9,14 @@ namespace wLib.UIStack
     {
         private readonly Dictionary<Type, Type> _controllerRef = new Dictionary<Type, Type>();
 
+        protected readonly Dictionary<int, IViewWidgetController>
+            ControllerCaches = new Dictionary<int, IViewWidgetController>();
+
         public ViewWidgetFactory()
         {
             var controllerTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-                .Where(x => !x.IsAbstract && !x.IsInterface && typeof(IWidgetController).IsAssignableFrom(x) &&
-                            x != typeof(IWidgetController)).ToArray();
+                .Where(x => !x.IsAbstract && !x.IsInterface && typeof(IViewWidgetController).IsAssignableFrom(x) &&
+                            x != typeof(IViewWidgetController)).ToArray();
 
             foreach (var controllerType in controllerTypes)
             {
@@ -21,7 +24,7 @@ namespace wLib.UIStack
                 for (var i = 0; i < interfaces.Length; i++)
                 {
                     var intf = interfaces[i];
-                    if (!typeof(IWidgetController).IsAssignableFrom(intf) || intf == typeof(IWidgetController))
+                    if (!typeof(IViewWidgetController).IsAssignableFrom(intf) || intf == typeof(IViewWidgetController))
                     {
                         continue;
                     }
@@ -35,7 +38,12 @@ namespace wLib.UIStack
             }
         }
 
-        public void CreateInstance(IUIManager manager, string widgetName, int assignedId,
+        public override void CreateInstance(IUIManager manager, string widgetName, int assignedId, Action<BaseWidget> onCreated)
+        {
+            CreateInstance(manager, widgetName, assignedId, widget => onCreated.Invoke(widget));
+        }
+
+        public virtual void CreateInstance(IUIManager manager, string widgetName, int assignedId,
             Action<ViewWidget> onCreated)
         {
             CreateInstance(manager, widgetName, assignedId, (AddressableWidget widget) =>
@@ -47,10 +55,10 @@ namespace wLib.UIStack
                 if (_controllerRef.ContainsKey(widgetType))
                 {
                     var controllerType = _controllerRef[widgetType];
-                    var controller = Activator.CreateInstance(controllerType) as IWidgetController;
+                    var controller = Activator.CreateInstance(controllerType) as IViewWidgetController;
                     if (controller != null)
                     {
-                        controller.SetWidget(viewWidget);
+                        controller.SetWidget(manager, viewWidget, assignedId);
                         viewWidget.OnShowAction += controller.OnShow;
                         viewWidget.OnHideAction += controller.OnHide;
                         viewWidget.OnFreezeAction += controller.OnFreeze;
@@ -63,6 +71,8 @@ namespace wLib.UIStack
                             viewWidget.OnResumeAction -= controller.OnResume;
                             controller = null;
                         };
+
+                        ControllerCaches.Add(assignedId, controller);
                     }
                 }
 
