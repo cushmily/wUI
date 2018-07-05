@@ -8,6 +8,8 @@
 
         void OnHide();
 
+        void OnUpdate();
+
         void OnResume();
 
         void OnFreeze();
@@ -36,6 +38,8 @@
         public virtual void OnShow(UIMessage message) { }
 
         public virtual void OnHide() { }
+        
+        public virtual void OnUpdate() { }
 
         public virtual void OnResume() { }
 

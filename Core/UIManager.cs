@@ -21,6 +21,8 @@ namespace wLib.UIStack
     {
         private static readonly Stack<BaseWidget> StackedWindows = new Stack<BaseWidget>();
         private static readonly List<int> WindowsInDisplay = new List<int>();
+        private static readonly List<int> Popups = new List<int>();
+        private static readonly List<int> Fixes = new List<int>();
 
         private static readonly Dictionary<int, BaseWidget> ComponentLookup = new Dictionary<int, BaseWidget>();
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
@@ -77,6 +79,8 @@ namespace wLib.UIStack
         #region Widget Manager
 
         private int _componentId;
+
+        #region Push
 
         public void Push(string widgetName)
         {
@@ -143,6 +147,10 @@ namespace wLib.UIStack
                 instance.transform.SetParent(parent.transform, false);
                 instance.transform.SetAsFirstSibling();
 
+                if (instance.Layer == UILayer.Popup) { Popups.Add(instance.Id); }
+
+                if (instance.Layer == UILayer.Fixed) { Fixes.Add(instance.Id); }
+
                 if (StackedWindows.Count > 0)
                 {
                     var prevWidget = StackedWindows.Peek();
@@ -176,6 +184,10 @@ namespace wLib.UIStack
                 }
             });
         }
+
+        #endregion
+
+        #region Pop
 
         public void Pop()
         {
@@ -212,6 +224,48 @@ namespace wLib.UIStack
             }
         }
 
+        #endregion
+
+        #region Clear
+
+        public void ClearPopups()
+        {
+            for (var i = 0; i < Popups.Count; i++)
+            {
+                var popup = Popups[i];
+                Close(popup);
+            }
+
+            Popups.Clear();
+        }
+
+        public void ClearFixes()
+        {
+            for (var i = 0; i < Fixes.Count; i++)
+            {
+                var fix = Fixes[i];
+                Close(fix);
+            }
+
+            Fixes.Clear();
+        }
+
+        public void ClearWindows()
+        {
+            while (StackedWindows.Count > 0)
+            {
+                var window = StackedWindows.Pop();
+                Close(window.Id);
+            }
+        }
+
+        public void ClearAll()
+        {
+            ClearPopups();
+            ClearFixes();
+            ClearWindows();
+        }
+
         public void Close(int widgetId)
         {
             Close(widgetId, null);
@@ -231,6 +285,8 @@ namespace wLib.UIStack
                 });
             }
         }
+
+        #endregion
 
         #endregion
 

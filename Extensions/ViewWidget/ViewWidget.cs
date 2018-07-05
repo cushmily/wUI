@@ -9,6 +9,7 @@ namespace wLib.UIStack
         public event Action OnHideAction;
         public event Action OnFreezeAction;
         public event Action OnResumeAction;
+        public event Action OnUpdateAction;
         public event Action OnDestroyAction;
 
         public override IEnumerator OnShow(UIMessage message)
@@ -33,6 +34,11 @@ namespace wLib.UIStack
         {
             OnResumeAction?.Invoke();
             yield return null;
+        }
+
+        protected virtual void Update()
+        {
+            OnUpdateAction?.Invoke();
         }
 
         protected virtual void OnDestroy()

@@ -38,9 +38,15 @@ namespace wLib.UIStack
             }
         }
 
-        public override void CreateInstance(IUIManager manager, string widgetName, int assignedId, Action<BaseWidget> onCreated)
+        public override void CreateInstance(IUIManager manager, string widgetName, int assignedId,
+            Action<BaseWidget> onCreated)
         {
             CreateInstance(manager, widgetName, assignedId, widget => onCreated.Invoke(widget));
+        }
+
+        public virtual object GetInstance(Type instanceType)
+        {
+            return Activator.CreateInstance(instanceType);
         }
 
         public virtual void CreateInstance(IUIManager manager, string widgetName, int assignedId,
@@ -55,7 +61,7 @@ namespace wLib.UIStack
                 if (_controllerRef.ContainsKey(widgetType))
                 {
                     var controllerType = _controllerRef[widgetType];
-                    var controller = Activator.CreateInstance(controllerType) as IViewWidgetController;
+                    var controller = GetInstance(controllerType) as IViewWidgetController;
                     if (controller != null)
                     {
                         controller.SetWidget(manager, viewWidget, assignedId);
@@ -63,12 +69,14 @@ namespace wLib.UIStack
                         viewWidget.OnHideAction += controller.OnHide;
                         viewWidget.OnFreezeAction += controller.OnFreeze;
                         viewWidget.OnResumeAction += controller.OnResume;
+                        viewWidget.OnUpdateAction += controller.OnUpdate;
                         viewWidget.OnDestroyAction += () =>
                         {
                             viewWidget.OnShowAction -= controller.OnShow;
                             viewWidget.OnHideAction -= controller.OnHide;
                             viewWidget.OnFreezeAction -= controller.OnFreeze;
                             viewWidget.OnResumeAction -= controller.OnResume;
+                            viewWidget.OnUpdateAction -= controller.OnUpdate;
                             controller = null;
                         };
 
