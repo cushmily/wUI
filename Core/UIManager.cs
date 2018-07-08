@@ -145,7 +145,7 @@ namespace wLib.UIStack
             {
                 var parent = LayerLookup[instance.Layer];
                 instance.transform.SetParent(parent.transform, false);
-                instance.transform.SetAsFirstSibling();
+//                instance.transform.SetAsFirstSibling();
 
                 if (instance.Layer == UILayer.Popup) { Popups.Add(instance.Id); }
 
