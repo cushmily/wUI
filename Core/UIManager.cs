@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using wLib.Injection;
 
 namespace wLib.UIStack
 {
@@ -19,17 +20,22 @@ namespace wLib.UIStack
 
     public class UIManager : MonoBehaviour, IUIManager
     {
-        private static readonly Stack<BaseWidget> StackedWindows = new Stack<BaseWidget>();
+        private static readonly Stack<Widget> StackedWindows = new Stack<Widget>();
         private static readonly List<int> WindowsInDisplay = new List<int>();
         private static readonly List<int> Popups = new List<int>();
         private static readonly List<int> Fixes = new List<int>();
 
-        private static readonly Dictionary<int, BaseWidget> ComponentLookup = new Dictionary<int, BaseWidget>();
+        private static readonly Dictionary<int, Widget> ComponentLookup = new Dictionary<int, Widget>();
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
 
-        public static UIManager BuildHirerachy(bool landscapeOrientation = true, Vector2? refResolution = null)
+        private static DiContainer _container;
+
+        public static UIManager BuildHierarchy(DiContainer container, bool landscapeOrientation = true,
+            Vector2? refResolution = null)
         {
+            _container = container;
+
             CollectFactories();
 
             var manager = new GameObject("UiManager").AddComponent<UIManager>();
@@ -53,12 +59,12 @@ namespace wLib.UIStack
                 layerCanvas.worldCamera = uiCam;
                 layerCanvas.sortingOrder = (int) layer;
 
-                var layerCanvaseScaler = layerObj.AddComponent<CanvasScaler>();
-                layerCanvaseScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                layerCanvaseScaler.referenceResolution = refResolution ?? (landscapeOrientation
-                                                             ? new Vector2(1920, 1080)
-                                                             : new Vector2(1080, 1920));
-                layerCanvaseScaler.matchWidthOrHeight = landscapeOrientation ? 1 : 0;
+                var layerCanvasScaler = layerObj.AddComponent<CanvasScaler>();
+                layerCanvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                layerCanvasScaler.referenceResolution = refResolution ?? (landscapeOrientation
+                                                            ? new Vector2(1920, 1080)
+                                                            : new Vector2(1080, 1920));
+                layerCanvasScaler.matchWidthOrHeight = landscapeOrientation ? 1 : 0;
 
                 var layerRaycaster = layerObj.AddComponent<GraphicRaycaster>();
                 layerRaycaster.name = layer.ToString();
@@ -84,61 +90,61 @@ namespace wLib.UIStack
 
         public void Push(string widgetName)
         {
-            Push<BaseWidget>(widgetName, UIMessage.Empty, null);
+            Push<Widget>(widgetName, UIMessage.Empty, null);
         }
 
         public void Push(string widgetName, Action<int> onCreated)
         {
-            Push<BaseWidget>(widgetName, UIMessage.Empty, onCreated);
+            Push<Widget>(widgetName, UIMessage.Empty, onCreated);
         }
 
         public void Push(string widgetName, UIMessage message)
         {
-            Push<BaseWidget>(widgetName, message, null);
+            Push<Widget>(widgetName, message, null);
         }
 
         public void Push(string widgetName, UIMessage message, Action<int> onCreated)
         {
-            Push<BaseWidget>(widgetName, message, onCreated);
+            Push<Widget>(widgetName, message, onCreated);
         }
 
-        public void Push<TWidget>() where TWidget : BaseWidget
+        public void Push<TWidget>() where TWidget : Widget
         {
             Push<TWidget>(null, UIMessage.Empty, null);
         }
 
-        public void Push<TWidget>(Action<int> onCreated) where TWidget : BaseWidget
+        public void Push<TWidget>(Action<int> onCreated) where TWidget : Widget
         {
             Push<TWidget>(null, UIMessage.Empty, onCreated);
         }
 
-        public void Push<TWidget>(UIMessage message) where TWidget : BaseWidget
+        public void Push<TWidget>(UIMessage message) where TWidget : Widget
         {
             Push<TWidget>(null, message, null);
         }
 
-        public void Push<TWidget>(UIMessage message, Action<int> onCreated) where TWidget : BaseWidget
+        public void Push<TWidget>(UIMessage message, Action<int> onCreated) where TWidget : Widget
         {
             Push<TWidget>(null, UIMessage.Empty, null);
         }
 
-        public void Push<TWidget>(string widgetName) where TWidget : BaseWidget
+        public void Push<TWidget>(string widgetName) where TWidget : Widget
         {
             Push<TWidget>(widgetName, UIMessage.Empty, null);
         }
 
-        public void Push<TWidget>(string widgetName, Action<int> onCreated) where TWidget : BaseWidget
+        public void Push<TWidget>(string widgetName, Action<int> onCreated) where TWidget : Widget
         {
             Push<TWidget>(widgetName, UIMessage.Empty, onCreated);
         }
 
-        public void Push<TWidget>(string widgetName, UIMessage message) where TWidget : BaseWidget
+        public void Push<TWidget>(string widgetName, UIMessage message) where TWidget : Widget
         {
             Push<TWidget>(widgetName, message, null);
         }
 
         public void Push<TWidget>(string widgetName, UIMessage message, Action<int> onCreated)
-            where TWidget : BaseWidget
+            where TWidget : Widget
         {
             var id = GetId();
             GetInstance<TWidget>(widgetName, id, instance =>
@@ -164,7 +170,7 @@ namespace wLib.UIStack
                     });
                     RunCoroutine(instance.OnShow(message), () =>
                     {
-                        if (onCreated != null) { onCreated.Invoke(id); }
+                        onCreated?.Invoke(id);
 
                         StackedWindows.Push(instance);
                         ComponentLookup.Add(id, instance);
@@ -175,7 +181,7 @@ namespace wLib.UIStack
                 {
                     RunCoroutine(instance.OnShow(message), () =>
                     {
-                        if (onCreated != null) { onCreated.Invoke(id); }
+                        onCreated?.Invoke(id);
 
                         StackedWindows.Push(instance);
                         ComponentLookup.Add(id, instance);
@@ -194,7 +200,7 @@ namespace wLib.UIStack
             Pop(null);
         }
 
-        public void Pop(Action onPoped)
+        public void Pop(Action onDone)
         {
             if (StackedWindows.Count < 0)
             {
@@ -209,7 +215,7 @@ namespace wLib.UIStack
                 RunCoroutine(current.OnHide(), () =>
                 {
                     MoveToHidden(current);
-                    if (onPoped != null) { onPoped.Invoke(); }
+                    onDone?.Invoke();
 
                     RunCoroutine(StackedWindows.Peek().OnResume(), null);
                 });
@@ -219,7 +225,7 @@ namespace wLib.UIStack
                 RunCoroutine(current.OnHide(), () =>
                 {
                     MoveToHidden(current);
-                    if (onPoped != null) { onPoped.Invoke(); }
+                    onDone?.Invoke();
                 });
             }
         }
@@ -279,7 +285,7 @@ namespace wLib.UIStack
                 RunCoroutine(targetWidget.OnHide(), () =>
                 {
                     MoveToHidden(targetWidget);
-                    if (onClosed != null) { onClosed.Invoke(); }
+                    onClosed?.Invoke();
 
                     if (WindowsInDisplay.Contains(widgetId)) { WindowsInDisplay.Remove(widgetId); }
                 });
@@ -321,17 +327,20 @@ namespace wLib.UIStack
                     if (atts.Length <= 0) { continue; }
 
                     var att = atts[0] as CustomWidgetFactoryAttribute;
-                    if (att != null)
-                    {
+                    if (att == null) { continue; }
+
 //                        Debug.Log("Collect " + att.WidgetType);
-                        var factoryInstance = Activator.CreateInstance(factoryType) as IWidgetFactory;
-                        RegisterFactory(att.WidgetType, factoryInstance);
-                    }
+                    var factoryInstance = Activator.CreateInstance(factoryType) as IWidgetFactory;
+                    if (factoryInstance == null) { continue; }
+
+                    _container.Inject(factoryInstance);
+                    factoryInstance.SetupFactory();
+                    RegisterFactory(att.WidgetType, factoryInstance);
                 }
             }
         }
 
-        private void GetInstance<T>(string widgetName, int assignedId, Action<T> onCreated) where T : BaseWidget
+        private void GetInstance<T>(string widgetName, int assignedId, Action<T> onCreated) where T : Widget
         {
             var useSpecifiedFactory = false;
             IWidgetFactory factory;
@@ -362,7 +371,7 @@ namespace wLib.UIStack
             if (useSpecifiedFactory)
             {
                 var genericFactory = factory as IWidgetFactory<T>;
-                if (genericFactory != null) { genericFactory.CreateInstance(this, widgetName, assignedId, onCreated); }
+                genericFactory?.CreateInstance(this, widgetName, assignedId, onCreated);
             }
             else
             {
@@ -388,7 +397,7 @@ namespace wLib.UIStack
         private IEnumerator MonitorCoroutine(IEnumerator target, Action onDone)
         {
             yield return target;
-            if (onDone != null) { onDone.Invoke(); }
+            onDone?.Invoke();
         }
 
         private int GetId()
@@ -396,9 +405,9 @@ namespace wLib.UIStack
             return _componentId++;
         }
 
-        public BaseWidget Get(int id)
+        public Widget Get(int id)
         {
-            BaseWidget targetComp;
+            Widget targetComp;
             if (!ComponentLookup.TryGetValue(id, out targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
@@ -407,9 +416,9 @@ namespace wLib.UIStack
             return targetComp;
         }
 
-        public TUiComponent Get<TUiComponent>(int id) where TUiComponent : BaseWidget
+        public TUiComponent Get<TUiComponent>(int id) where TUiComponent : Widget
         {
-            BaseWidget targetComp;
+            Widget targetComp;
             if (!ComponentLookup.TryGetValue(id, out targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
@@ -423,10 +432,10 @@ namespace wLib.UIStack
             return null;
         }
 
-        private void MoveToHidden(BaseWidget baseToHide)
+        private void MoveToHidden(Widget toHide)
         {
             var hiddenLayer = LayerLookup[UILayer.UIHidden];
-            baseToHide.transform.SetParent(hiddenLayer.transform);
+            toHide.transform.SetParent(hiddenLayer.transform);
         }
 
         #endregion

@@ -2,7 +2,7 @@
 
 namespace wLib.UIStack
 {
-    public interface IWidgetLife
+    public interface IWidget
     {
         IEnumerator OnShow(UIMessage message);
 
@@ -11,5 +11,7 @@ namespace wLib.UIStack
         IEnumerator OnResume();
 
         IEnumerator OnFreeze();
+
+        void DestroyWidget();
     }
 }

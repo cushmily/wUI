@@ -12,17 +12,17 @@ namespace wLib.UIStack
 
         void Push(string widgetName, UIMessage message, Action<int> onCreated);
         
-        void Push<TWidget>(string widgetName) where TWidget : BaseWidget;
+        void Push<TWidget>(string widgetName) where TWidget : Widget;
 
-        void Push<TWidget>(string widgetName, Action<int> onCreated) where TWidget : BaseWidget;
+        void Push<TWidget>(string widgetName, Action<int> onCreated) where TWidget : Widget;
 
-        void Push<TWidget>(string widgetName, UIMessage message) where TWidget : BaseWidget;
+        void Push<TWidget>(string widgetName, UIMessage message) where TWidget : Widget;
 
-        void Push<TWidget>(string widgetName, UIMessage message, Action<int> onCreated) where TWidget : BaseWidget; 
+        void Push<TWidget>(string widgetName, UIMessage message, Action<int> onCreated) where TWidget : Widget; 
 
         void Pop();
 
-        void Pop(Action onPoped);
+        void Pop(Action onDone);
 
         void ClearPopups();
 

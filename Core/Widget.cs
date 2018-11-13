@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace wLib.UIStack
 {
-    public class BaseWidget : MonoBehaviour, IWidgetLife
+    public class Widget : MonoBehaviour, IWidget
     {
         public int Id { get; private set; }
 
@@ -16,6 +17,12 @@ namespace wLib.UIStack
         }
 
         public virtual UILayer Layer => UILayer.Window;
+
+        #region Events
+
+        public event Action<Widget> OnDestroyEvent;
+
+        #endregion
 
         public virtual IEnumerator OnShow(UIMessage message)
         {
@@ -35,6 +42,16 @@ namespace wLib.UIStack
         public virtual IEnumerator OnFreeze()
         {
             yield break;
+        }
+
+        public void DestroyWidget()
+        {
+            OnDestroyEvent?.Invoke(this);
+        }
+
+        public virtual void OnDestroy()
+        {
+            DestroyWidget();
         }
     }
 }

@@ -1,6 +1,8 @@
 {
     "name": "wUIStack",
-    "references": [],
+    "references": [
+        "wInjection"
+    ],
     "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
