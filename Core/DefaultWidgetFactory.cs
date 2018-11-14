@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using wLib.Injection;
 using Object = UnityEngine.Object;
@@ -22,7 +21,8 @@ namespace wLib.UIStack
 
         public DefaultWidgetFactory()
         {
-            _databases = Resources.FindObjectsOfTypeAll<WidgetDatabase>().ToList();
+            _databases = Resources.LoadAll<WidgetDatabase>("").ToList();
+            Debug.Log($"Found {_databases.Count} databases.");
         }
 
         public void SetupFactory()

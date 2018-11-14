@@ -6,7 +6,12 @@ namespace wLib.UIStack
 {
     public class Widget : MonoBehaviour, IWidget
     {
+        [SerializeField]
+        private UILayer _layer = UILayer.Window;
+        
         public int Id { get; private set; }
+
+        public virtual UILayer Layer => _layer;
 
         protected IUIManager UIManager { get; private set; }
 
@@ -15,8 +20,6 @@ namespace wLib.UIStack
             Id = id;
             UIManager = manager;
         }
-
-        public virtual UILayer Layer => UILayer.Window;
 
         #region Events
 

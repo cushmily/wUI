@@ -1,3 +1,14 @@
-﻿{
-	"name": "wUIStack.Editor"
+{
+    "name": "wUIStack.Editor",
+    "references": [
+        "wUIStack"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
 }
