@@ -20,6 +20,14 @@ namespace wLib.UIStack
 
         #region Events
 
+        public event Action<Widget> OnShowEvent;
+
+        public event Action<Widget> OnHideEvent;
+
+        public event Action<Widget> OnFreezeEvent;
+
+        public event Action<Widget> OnResumeEvent;
+
         public event Action<Widget> OnDestroyEvent;
 
         #endregion
@@ -42,6 +50,26 @@ namespace wLib.UIStack
         public virtual IEnumerator OnFreeze()
         {
             yield break;
+        }
+
+        public void TriggerOnShowEvent()
+        {
+            OnShowEvent?.Invoke(this);
+        }
+
+        public void TriggerOnHideEvent()
+        {
+            OnHideEvent?.Invoke(this);
+        }
+
+        public void TriggerOnFreezeEvent()
+        {
+            OnFreezeEvent?.Invoke(this);
+        }
+
+        public void TriggerOnResumeEvent()
+        {
+            OnResumeEvent?.Invoke(this);
         }
 
         public void DestroyWidget()

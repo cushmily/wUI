@@ -25,9 +25,11 @@ namespace wLib.UIStack
         private static readonly List<int> Popups = new List<int>();
         private static readonly List<int> Fixes = new List<int>();
 
-        private static readonly Dictionary<int, Widget> ComponentLookup = new Dictionary<int, Widget>();
+        private static readonly Dictionary<int, Widget> WidgetLookup = new Dictionary<int, Widget>();
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
+
+        private static readonly Dictionary<Type, Stack<Widget>> PoolingWidgets = new Dictionary<Type, Stack<Widget>>();
 
         private static DiContainer _container;
 
@@ -162,6 +164,8 @@ namespace wLib.UIStack
                     var prevWidget = StackedWindows.Peek();
                     RunCoroutine(prevWidget.OnFreeze(), () =>
                     {
+                        prevWidget.TriggerOnFreezeEvent();
+
                         // Window will overlay previous windows.
                         if (instance.Layer == UILayer.Window && WindowsInDisplay.Contains(prevWidget.Id))
                         {
@@ -170,10 +174,11 @@ namespace wLib.UIStack
                     });
                     RunCoroutine(instance.OnShow(message), () =>
                     {
+                        instance.TriggerOnShowEvent();
                         onCreated?.Invoke(id);
 
                         StackedWindows.Push(instance);
-                        ComponentLookup.Add(id, instance);
+                        WidgetLookup.Add(id, instance);
                         WindowsInDisplay.Add(id);
                     });
                 }
@@ -181,10 +186,11 @@ namespace wLib.UIStack
                 {
                     RunCoroutine(instance.OnShow(message), () =>
                     {
+                        instance.TriggerOnShowEvent();
                         onCreated?.Invoke(id);
 
                         StackedWindows.Push(instance);
-                        ComponentLookup.Add(id, instance);
+                        WidgetLookup.Add(id, instance);
                         WindowsInDisplay.Add(id);
                     });
                 }
@@ -195,12 +201,12 @@ namespace wLib.UIStack
 
         #region Pop
 
-        public void Pop()
+        public void Pop(bool recycle = false)
         {
-            Pop(null);
+            Pop(null, recycle);
         }
 
-        public void Pop(Action onDone)
+        public void Pop(Action onDone, bool recycle = false)
         {
             if (StackedWindows.Count < 0)
             {
@@ -214,17 +220,33 @@ namespace wLib.UIStack
             {
                 RunCoroutine(current.OnHide(), () =>
                 {
-                    MoveToHidden(current);
+                    if (recycle) { MoveToHidden(current); }
+                    else
+                    {
+                        WidgetLookup.Remove(current.Id);
+                        Destroy(current.gameObject);
+                    }
+
+                    current.TriggerOnHideEvent();
                     onDone?.Invoke();
 
-                    RunCoroutine(StackedWindows.Peek().OnResume(), null);
+                    // resume previous window
+                    var resumeWindow = StackedWindows.Peek();
+                    RunCoroutine(resumeWindow.OnResume(), () => { resumeWindow.TriggerOnResumeEvent(); });
                 });
             }
             else
             {
                 RunCoroutine(current.OnHide(), () =>
                 {
-                    MoveToHidden(current);
+                    if (recycle) { MoveToHidden(current); }
+                    else
+                    {
+                        WidgetLookup.Remove(current.Id);
+                        Destroy(current.gameObject);
+                    }
+
+                    current.TriggerOnHideEvent();
                     onDone?.Invoke();
                 });
             }
@@ -236,22 +258,14 @@ namespace wLib.UIStack
 
         public void ClearPopups()
         {
-            for (var i = 0; i < Popups.Count; i++)
-            {
-                var popup = Popups[i];
-                Close(popup);
-            }
+            foreach (var popup in Popups) { Close(popup); }
 
             Popups.Clear();
         }
 
         public void ClearFixes()
         {
-            for (var i = 0; i < Fixes.Count; i++)
-            {
-                var fix = Fixes[i];
-                Close(fix);
-            }
+            foreach (var fix in Fixes) { Close(fix); }
 
             Fixes.Clear();
         }
@@ -342,6 +356,18 @@ namespace wLib.UIStack
 
         private void GetInstance<T>(string widgetName, int assignedId, Action<T> onCreated) where T : Widget
         {
+            if (PoolingWidgets.ContainsKey(typeof(T)))
+            {
+                var pool = PoolingWidgets[typeof(T)];
+                if (pool.Count > 0)
+                {
+                    var instance = pool.Pop();
+
+                    onCreated.Invoke(instance as T);
+                    return;
+                }
+            }
+
             var useSpecifiedFactory = false;
             IWidgetFactory factory;
             var resolveType = typeof(T);
@@ -378,13 +404,13 @@ namespace wLib.UIStack
                 factory.CreateInstance(this, widgetName, assignedId,
                     widgetCreated =>
                     {
-                        var genericWdiget = widgetCreated as T;
-                        if (genericWdiget == null)
+                        var genericWidget = widgetCreated as T;
+                        if (genericWidget == null)
                         {
                             Debug.LogWarningFormat("Can not convert [{0}] to type: {1}", widgetCreated, typeof(T));
                         }
 
-                        onCreated.Invoke(genericWdiget);
+                        onCreated.Invoke(genericWidget);
                     });
             }
         }
@@ -408,7 +434,7 @@ namespace wLib.UIStack
         public Widget Get(int id)
         {
             Widget targetComp;
-            if (!ComponentLookup.TryGetValue(id, out targetComp))
+            if (!WidgetLookup.TryGetValue(id, out targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
             }
@@ -419,7 +445,7 @@ namespace wLib.UIStack
         public TUiComponent Get<TUiComponent>(int id) where TUiComponent : Widget
         {
             Widget targetComp;
-            if (!ComponentLookup.TryGetValue(id, out targetComp))
+            if (!WidgetLookup.TryGetValue(id, out targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
             }
@@ -436,6 +462,15 @@ namespace wLib.UIStack
         {
             var hiddenLayer = LayerLookup[UILayer.UIHidden];
             toHide.transform.SetParent(hiddenLayer.transform);
+
+            var type = toHide.GetType();
+            if (PoolingWidgets.ContainsKey(type)) { PoolingWidgets[type].Push(toHide); }
+            else
+            {
+                var newStack = new Stack<Widget>();
+                newStack.Push(toHide);
+                PoolingWidgets.Add(type, newStack);
+            }
         }
 
         #endregion
