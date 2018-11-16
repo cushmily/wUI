@@ -11,6 +11,10 @@ public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IS
     [SerializeField]
     private List<TValue> _values = new List<TValue>();
 
+    public SerializableDictionary() { }
+
+    public SerializableDictionary(IDictionary<TKey, TValue> dict) : base(dict) { }
+
     public void OnBeforeSerialize()
     {
         _keys.Clear();
