@@ -8,6 +8,7 @@ namespace wLib.UIStack
     public class WidgetPairDict : SerializableDictionary<string, Widget>
     {
         public WidgetPairDict() { }
+        
         public WidgetPairDict(IDictionary<string, Widget> widget) : base(widget) { }
     }
 

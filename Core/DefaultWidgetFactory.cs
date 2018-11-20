@@ -78,8 +78,9 @@ namespace wLib.UIStack
             }
 
             var ret = _caches[widgetPath];
-            ret.SetManagerInfo(assignedId, manager);
             var instance = Object.Instantiate(ret);
+            
+            instance.SetManagerInfo(assignedId, manager);
             var instanceType = instance.GetType();
             if (_controllerRef.ContainsKey(instanceType))
             {

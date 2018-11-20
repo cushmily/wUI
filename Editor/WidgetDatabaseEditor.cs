@@ -102,5 +102,9 @@ public class WidgetDatabaseEditor : Editor
     private void SaveData()
     {
         serializedObject.ApplyModifiedProperties();
+        
+        EditorUtility.SetDirty(Target);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 }

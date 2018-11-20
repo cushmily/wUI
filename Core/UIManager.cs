@@ -41,7 +41,6 @@ namespace wLib.UIStack
             CollectFactories();
 
             var manager = new GameObject("UiManager").AddComponent<UIManager>();
-            DontDestroyOnLoad(manager);
 
             var uiCam = new GameObject("UiCamera", typeof(Camera)).GetComponent<Camera>();
             uiCam.clearFlags = CameraClearFlags.Depth;
