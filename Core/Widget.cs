@@ -35,7 +35,7 @@ namespace wLib.UIStack
 
         #endregion
 
-        public virtual IEnumerator OnShow(UIMessage message)
+        public virtual IEnumerator OnShow()
         {
             yield break;
         }

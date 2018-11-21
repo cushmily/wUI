@@ -148,7 +148,7 @@ namespace wLib.UIStack
             where TWidget : Widget
         {
             var id = GetId();
-            GetInstance<TWidget>(widgetName, id, instance =>
+            GetInstance<TWidget>(widgetName, id, message, instance =>
             {
                 var parent = LayerLookup[instance.Layer];
                 instance.transform.SetParent(parent.transform, false);
@@ -171,7 +171,7 @@ namespace wLib.UIStack
                             WindowsInDisplay.Remove(prevWidget.Id);
                         }
                     });
-                    RunCoroutine(instance.OnShow(message), () =>
+                    RunCoroutine(instance.OnShow(), () =>
                     {
                         instance.TriggerOnShowEvent();
                         onCreated?.Invoke(id);
@@ -183,7 +183,7 @@ namespace wLib.UIStack
                 }
                 else
                 {
-                    RunCoroutine(instance.OnShow(message), () =>
+                    RunCoroutine(instance.OnShow(), () =>
                     {
                         instance.TriggerOnShowEvent();
                         onCreated?.Invoke(id);
@@ -353,7 +353,8 @@ namespace wLib.UIStack
             }
         }
 
-        private void GetInstance<T>(string widgetName, int assignedId, Action<T> onCreated) where T : Widget
+        private void GetInstance<T>(string widgetName, int assignedId, UIMessage message, Action<T> onCreated)
+            where T : Widget
         {
             if (PoolingWidgets.ContainsKey(typeof(T)))
             {
@@ -396,11 +397,11 @@ namespace wLib.UIStack
             if (useSpecifiedFactory)
             {
                 var genericFactory = factory as IWidgetFactory<T>;
-                genericFactory?.CreateInstance(this, widgetName, assignedId, onCreated);
+                genericFactory?.CreateInstance(this, widgetName, assignedId, message, onCreated);
             }
             else
             {
-                factory.CreateInstance(this, widgetName, assignedId,
+                factory.CreateInstance(this, widgetName, assignedId, message,
                     widgetCreated =>
                     {
                         var genericWidget = widgetCreated as T;

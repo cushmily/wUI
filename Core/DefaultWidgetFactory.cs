@@ -54,7 +54,7 @@ namespace wLib.UIStack
             }
         }
 
-        public void CreateInstance(IUIManager manager, string widgetPath, int assignedId,
+        public void CreateInstance(IUIManager manager, string widgetPath, int assignedId, UIMessage message,
             Action<Widget> onCreated)
         {
             if (!_caches.ContainsKey(widgetPath))
@@ -79,15 +79,17 @@ namespace wLib.UIStack
 
             var ret = _caches[widgetPath];
             var instance = Object.Instantiate(ret);
-            
+
             instance.SetManagerInfo(assignedId, manager);
             var instanceType = instance.GetType();
             if (_controllerRef.ContainsKey(instanceType))
             {
                 var controllerType = _controllerRef[instanceType];
                 var controllerInstance =
-                    Activator.CreateInstance(controllerType, new object[] {instance}) as IWidgetController;
+                    Activator.CreateInstance(controllerType) as IWidgetController;
+
                 _container.Inject(controllerInstance);
+                controllerInstance?.SetControllerInfo(instance, manager, message);
                 controllerInstance?.Initialise();
             }
 
