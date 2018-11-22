@@ -29,7 +29,7 @@ namespace wLib.UIStack
             OnDestroy();
         }
 
-        public abstract void Initialise();
+        public abstract void Initialize();
 
         public abstract void OnDestroy();
     }

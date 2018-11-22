@@ -104,7 +104,10 @@ namespace wLib.UIStack
 
                 _container.Inject(controllerInstance);
                 controllerInstance?.SetControllerInfo(instance, manager, message);
-                controllerInstance?.Initialise();
+                controllerInstance?.Initialize();
+                
+                // cache reference
+                instance.Controller = controllerInstance;
             }
 
             onCreated?.Invoke(instance);

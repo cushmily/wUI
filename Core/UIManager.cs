@@ -29,7 +29,8 @@ namespace wLib.UIStack
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
 
-        private static readonly Dictionary<string, Stack<Widget>> PoolingWidgets = new Dictionary<string, Stack<Widget>>();
+        private static readonly Dictionary<string, Stack<Widget>> PoolingWidgets =
+            new Dictionary<string, Stack<Widget>>();
 
         private static DiContainer _container;
 
@@ -219,6 +220,8 @@ namespace wLib.UIStack
             {
                 RunCoroutine(current.OnHide(), () =>
                 {
+                    current.TriggerOnHideEvent();
+
                     if (recycle) { MoveToHidden(current); }
                     else
                     {
@@ -226,7 +229,7 @@ namespace wLib.UIStack
                         Destroy(current.gameObject);
                     }
 
-                    current.TriggerOnHideEvent();
+                    current.Controller?.OnDestroy();
                     onDone?.Invoke();
 
                     // resume previous window
@@ -238,6 +241,8 @@ namespace wLib.UIStack
             {
                 RunCoroutine(current.OnHide(), () =>
                 {
+                    current.TriggerOnHideEvent();
+
                     if (recycle) { MoveToHidden(current); }
                     else
                     {
@@ -245,7 +250,7 @@ namespace wLib.UIStack
                         Destroy(current.gameObject);
                     }
 
-                    current.TriggerOnHideEvent();
+                    current.Controller?.OnDestroy();
                     onDone?.Invoke();
                 });
             }
@@ -304,6 +309,7 @@ namespace wLib.UIStack
                         Destroy(targetWidget.gameObject);
                     }
 
+                    targetWidget.Controller?.OnDestroy();
                     onClosed?.Invoke();
 
                     if (WindowsInDisplay.Contains(widgetId)) { WindowsInDisplay.Remove(widgetId); }
@@ -369,6 +375,12 @@ namespace wLib.UIStack
                 if (pool.Count > 0)
                 {
                     var instance = pool.Pop();
+
+                    if (instance.Controller != null)
+                    {
+                        instance.Controller?.SetControllerInfo(instance, this, message);
+                        instance.Controller?.Initialize();
+                    }
 
                     onCreated.Invoke(instance as T);
                     return;

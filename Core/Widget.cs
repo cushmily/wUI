@@ -13,6 +13,8 @@ namespace wLib.UIStack
 
         public string Path { get; private set; }
 
+        public IWidgetController Controller { get; set; }
+
         public virtual UILayer Layer => _layer;
 
         protected IUIManager UIManager { get; private set; }
