@@ -29,7 +29,7 @@ namespace wLib.UIStack
         private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
 
-        private static readonly Dictionary<Type, Stack<Widget>> PoolingWidgets = new Dictionary<Type, Stack<Widget>>();
+        private static readonly Dictionary<string, Stack<Widget>> PoolingWidgets = new Dictionary<string, Stack<Widget>>();
 
         private static DiContainer _container;
 
@@ -285,19 +285,25 @@ namespace wLib.UIStack
             ClearWindows();
         }
 
-        public void Close(int widgetId)
+        public void Close(int widgetId, bool recycle = false)
         {
-            Close(widgetId, null);
+            Close(widgetId, null, recycle);
         }
 
-        public void Close(int widgetId, Action onClosed)
+        public void Close(int widgetId, Action onClosed, bool recycle = false)
         {
             var targetWidget = Get(widgetId);
             if (targetWidget.Layer != UILayer.Window || !WindowsInDisplay.Contains(widgetId))
             {
                 RunCoroutine(targetWidget.OnHide(), () =>
                 {
-                    MoveToHidden(targetWidget);
+                    if (recycle) { MoveToHidden(targetWidget); }
+                    else
+                    {
+                        WidgetLookup.Remove(targetWidget.Id);
+                        Destroy(targetWidget.gameObject);
+                    }
+
                     onClosed?.Invoke();
 
                     if (WindowsInDisplay.Contains(widgetId)) { WindowsInDisplay.Remove(widgetId); }
@@ -353,12 +359,13 @@ namespace wLib.UIStack
             }
         }
 
-        private void GetInstance<T>(string widgetName, int assignedId, UIMessage message, Action<T> onCreated)
+        private void GetInstance<T>(string widgetPath, int assignedId, UIMessage message, Action<T> onCreated)
             where T : Widget
         {
-            if (PoolingWidgets.ContainsKey(typeof(T)))
+            var resolveType = typeof(T);
+            if (PoolingWidgets.ContainsKey(widgetPath))
             {
-                var pool = PoolingWidgets[typeof(T)];
+                var pool = PoolingWidgets[widgetPath];
                 if (pool.Count > 0)
                 {
                     var instance = pool.Pop();
@@ -370,7 +377,6 @@ namespace wLib.UIStack
 
             var useSpecifiedFactory = false;
             IWidgetFactory factory;
-            var resolveType = typeof(T);
             if (!FactoryLookup.TryGetValue(resolveType, out factory))
             {
                 while (factory == null && resolveType.BaseType != null)
@@ -397,11 +403,11 @@ namespace wLib.UIStack
             if (useSpecifiedFactory)
             {
                 var genericFactory = factory as IWidgetFactory<T>;
-                genericFactory?.CreateInstance(this, widgetName, assignedId, message, onCreated);
+                genericFactory?.CreateInstance(this, widgetPath, assignedId, message, onCreated);
             }
             else
             {
-                factory.CreateInstance(this, widgetName, assignedId, message,
+                factory.CreateInstance(this, widgetPath, assignedId, message,
                     widgetCreated =>
                     {
                         var genericWidget = widgetCreated as T;
@@ -464,12 +470,12 @@ namespace wLib.UIStack
             toHide.transform.SetParent(hiddenLayer.transform);
 
             var type = toHide.GetType();
-            if (PoolingWidgets.ContainsKey(type)) { PoolingWidgets[type].Push(toHide); }
+            if (PoolingWidgets.ContainsKey(toHide.Path)) { PoolingWidgets[toHide.Path].Push(toHide); }
             else
             {
                 var newStack = new Stack<Widget>();
                 newStack.Push(toHide);
-                PoolingWidgets.Add(type, newStack);
+                PoolingWidgets.Add(toHide.Path, newStack);
             }
         }
 

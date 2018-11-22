@@ -77,10 +77,24 @@ namespace wLib.UIStack
                 return;
             }
 
-            var ret = _caches[widgetPath];
-            var instance = Object.Instantiate(ret);
+            var widgetPrefab = _caches[widgetPath];
+            if (widgetPrefab == null)
+            {
+                for (var i = 0; i < _databases.Count; i++)
+                {
+                    var database = _databases[i];
+                    if (!database.Value.ContainsKey(widgetPath)) { continue; }
 
-            instance.SetManagerInfo(assignedId, manager);
+                    Debug.LogError(
+                        $"Can't instantiate widget[{widgetPath}], it reference a [NULL] prefab in database[{database.name}].");
+                }
+
+                return;
+            }
+
+            var instance = Object.Instantiate(widgetPrefab);
+
+            instance.SetManagerInfo(assignedId, widgetPath, manager);
             var instanceType = instance.GetType();
             if (_controllerRef.ContainsKey(instanceType))
             {

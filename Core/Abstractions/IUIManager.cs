@@ -32,8 +32,8 @@ namespace wLib.UIStack
 
         void ClearAll();
 
-        void Close(int widgetId);
+        void Close(int widgetId, bool recycle = false);
 
-        void Close(int widgetId, Action onClosed);
+        void Close(int widgetId, Action onClosed, bool recycle = false);
     }
 }

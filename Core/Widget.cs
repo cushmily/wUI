@@ -8,16 +8,19 @@ namespace wLib.UIStack
     {
         [SerializeField]
         private UILayer _layer = UILayer.Window;
-        
+
         public int Id { get; private set; }
+
+        public string Path { get; private set; }
 
         public virtual UILayer Layer => _layer;
 
         protected IUIManager UIManager { get; private set; }
 
-        public void SetManagerInfo(int id, IUIManager manager)
+        public void SetManagerInfo(int id, string path, IUIManager manager)
         {
             Id = id;
+            Path = path;
             UIManager = manager;
         }
 
