@@ -61,6 +61,7 @@ public class WidgetDatabaseEditor : Editor
                     if (checkScope.changed)
                     {
                         Target.Value[valuePair.Key] = newWidget as Widget;
+                        SaveData();
                         return;
                     }
                 }
@@ -101,9 +102,7 @@ public class WidgetDatabaseEditor : Editor
 
     private void SaveData()
     {
-        serializedObject.ApplyModifiedProperties();
-        
-        EditorUtility.SetDirty(Target);
+        EditorUtility.SetDirty(target);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
     }
