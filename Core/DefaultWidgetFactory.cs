@@ -22,7 +22,7 @@ namespace wLib.UIStack
         public DefaultWidgetFactory()
         {
             _databases = Resources.LoadAll<WidgetDatabase>("").ToList();
-            Debug.Log($"Found {_databases.Count} databases.");
+            Debug.Log($"Found {_databases.Count} widget databases.");
         }
 
         public void SetupFactory()
