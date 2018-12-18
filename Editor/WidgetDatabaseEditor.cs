@@ -40,7 +40,10 @@ public class WidgetDatabaseEditor : Editor
                 _newWidgetPath =
                     EditorGUILayout.TextField(new GUIContent("Path"), _newWidgetPath, GUILayout.Width(120));
                 _newWidget = EditorGUILayout.ObjectField(new GUIContent("Widget"), _newWidget, typeof(Widget), false);
-                AddWidget();
+                if (!AddWidget())
+                {
+                    EditorGUILayout.HelpBox(new GUIContent("This widget is not under resources folder!"));
+                }
             }
 
             EditorGUIUtility.labelWidth = oriWidth;
@@ -71,12 +74,17 @@ public class WidgetDatabaseEditor : Editor
         }
     }
 
-    private void AddWidget()
+    private bool AddWidget()
     {
-        var keyExists = string.IsNullOrEmpty(_newWidgetPath) || Target.Value.ContainsKey(_newWidgetPath);
-        using (new EditorGUI.DisabledScope(keyExists))
+        var keyExists = !string.IsNullOrEmpty(_newWidgetPath) && Target.Value.ContainsKey(_newWidgetPath);
+        var autoPathExists = string.IsNullOrEmpty(_newWidgetPath) && _newWidget != null &&
+                             Target.Value.ContainsKey(_newWidget.name);
+
+        using (new EditorGUI.DisabledScope(keyExists || _newWidget == null || autoPathExists))
         {
-            if (!GUILayout.Button("Add", EditorStyles.toolbarButton, GUILayout.Width(45))) { return; }
+            if (!GUILayout.Button("Add", EditorStyles.toolbarButton, GUILayout.Width(45))) { return true; }
+
+            if (string.IsNullOrEmpty(_newWidgetPath)) { _newWidgetPath = _newWidget.name; }
 
             Target.Value.Add(_newWidgetPath, _newWidget as Widget);
             Target.Value = new WidgetPairDict(Target.Value.OrderBy(x => x.Key).ToDictionary(x => x.Key, v => v.Value));
@@ -85,6 +93,8 @@ public class WidgetDatabaseEditor : Editor
 
             SaveData();
         }
+
+        return true;
     }
 
     private bool RemoveButton(string key)
