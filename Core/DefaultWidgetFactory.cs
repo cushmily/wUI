@@ -102,10 +102,20 @@ namespace wLib.UIStack
                 var controllerInstance =
                     Activator.CreateInstance(controllerType) as IWidgetController;
 
+                if (controllerInstance == null)
+                {
+                    Debug.LogError($"Create [{controllerType}] instance failed.");
+                    return;
+                }
+
                 _container.Inject(controllerInstance);
-                controllerInstance?.SetControllerInfo(instance, manager, message);
-                controllerInstance?.Initialize();
-                
+                try
+                {
+                    controllerInstance.SetControllerInfo(instance, manager, message);
+                    controllerInstance.Initialize();
+                }
+                catch (Exception e) { Debug.LogException(e); }
+
                 // cache reference
                 instance.Controller = controllerInstance;
             }

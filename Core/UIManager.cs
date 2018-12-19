@@ -20,25 +20,63 @@ namespace wLib.UIStack
 
     public class UIManager : MonoBehaviour, IUIManager
     {
-        private static readonly Stack<Widget> StackedWindows = new Stack<Widget>();
-        private static readonly List<int> WindowsInDisplay = new List<int>();
-        private static readonly List<int> Popups = new List<int>();
-        private static readonly List<int> Fixes = new List<int>();
+        private readonly Stack<Widget> StackedWindows = new Stack<Widget>();
+        private readonly List<int> WindowsInDisplay = new List<int>();
+        private readonly List<int> Popups = new List<int>();
+        private readonly List<int> Fixes = new List<int>();
 
-        private static readonly Dictionary<int, Widget> WidgetLookup = new Dictionary<int, Widget>();
-        private static readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
+        private readonly Dictionary<int, Widget> WidgetLookup = new Dictionary<int, Widget>();
+        private readonly Dictionary<UILayer, GameObject> LayerLookup = new Dictionary<UILayer, GameObject>();
         private static readonly Dictionary<Type, IWidgetFactory> FactoryLookup = new Dictionary<Type, IWidgetFactory>();
 
-        private static readonly Dictionary<string, Stack<Widget>> PoolingWidgets =
+        private readonly Dictionary<string, Stack<Widget>> PoolingWidgets =
             new Dictionary<string, Stack<Widget>>();
 
         private static DiContainer _container;
 
+        public static UIManager FromInstance(DiContainer container, string resourcePath = "UI Manager")
+        {
+            if (_container != null)
+            {
+                Debug.LogError("UI Manager already initialized.");
+                return null;
+            }
+
+            _container = container;
+            CollectFactories();
+
+            var prefab = Resources.Load<UIManager>(resourcePath);
+            if (prefab == null) { return null; }
+
+            var instance = Instantiate(prefab);
+
+            foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
+            {
+                var layerLabel = layer.ToString();
+
+                var child = instance.transform.Find(layerLabel);
+                if (child == null)
+                {
+                    Debug.LogError($"Layer {layerLabel} can not be found in UI Manager.");
+                    continue;
+                }
+
+                instance.LayerLookup.Add(layer, child.gameObject);
+            }
+
+            return instance;
+        }
+
         public static UIManager BuildHierarchy(DiContainer container, bool landscapeOrientation = true,
             Vector2? refResolution = null)
         {
-            _container = container;
+            if (_container != null)
+            {
+                Debug.LogError("UI Manager already initialized.");
+                return null;
+            }
 
+            _container = container;
             CollectFactories();
 
             var manager = new GameObject("UiManager").AddComponent<UIManager>();
@@ -54,7 +92,7 @@ namespace wLib.UIStack
             foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
             {
                 var layerObj = new GameObject(layer.ToString());
-                LayerLookup.Add(layer, layerObj);
+                manager.LayerLookup.Add(layer, layerObj);
 
                 var layerCanvas = layerObj.AddComponent<Canvas>();
                 layerCanvas.renderMode = RenderMode.ScreenSpaceCamera;
@@ -378,8 +416,12 @@ namespace wLib.UIStack
 
                     if (instance.Controller != null)
                     {
-                        instance.Controller?.SetControllerInfo(instance, this, message);
-                        instance.Controller?.Initialize();
+                        try
+                        {
+                            instance.Controller?.SetControllerInfo(instance, this, message);
+                            instance.Controller?.Initialize();
+                        }
+                        catch (Exception ex) { Debug.LogException(ex); }
                     }
 
                     onCreated.Invoke(instance as T);
@@ -406,7 +448,7 @@ namespace wLib.UIStack
 
                 if (factory == null)
                 {
-                    Debug.LogError("Widget factory not found for type: {0}, no fallback.");
+                    Debug.LogError($"Widget factory not found for type: {typeof(T)}, no fallback.");
                     return;
                 }
             }
