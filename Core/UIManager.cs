@@ -79,9 +79,9 @@ namespace wLib.UIStack
             _container = container;
             CollectFactories();
 
-            var manager = new GameObject("UiManager").AddComponent<UIManager>();
+            var manager = new GameObject("UI Manager").AddComponent<UIManager>();
 
-            var uiCam = new GameObject("UiCamera", typeof(Camera)).GetComponent<Camera>();
+            var uiCam = new GameObject("UI Camera", typeof(Camera)).GetComponent<Camera>();
             uiCam.clearFlags = CameraClearFlags.Depth;
             uiCam.cullingMask = 1 << LayerMask.NameToLayer("UI");
             uiCam.orthographic = true;
