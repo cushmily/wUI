@@ -32,9 +32,9 @@ namespace wLib.UIStack
         private readonly Dictionary<string, Stack<Widget>> PoolingWidgets =
             new Dictionary<string, Stack<Widget>>();
 
-        private static DiContainer _container;
+        private static IDependencyContainer _container;
 
-        public static UIManager FromInstance(DiContainer container, string resourcePath = "UI Manager")
+        public static UIManager FromInstance(IDependencyContainer container, UIManager uiManagerPrefab)
         {
             if (_container != null)
             {
@@ -45,10 +45,7 @@ namespace wLib.UIStack
             _container = container;
             CollectFactories();
 
-            var prefab = Resources.Load<UIManager>(resourcePath);
-            if (prefab == null) { return null; }
-
-            var instance = Instantiate(prefab);
+            var instance = Instantiate(uiManagerPrefab);
 
             foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
             {
@@ -67,7 +64,7 @@ namespace wLib.UIStack
             return instance;
         }
 
-        public static UIManager BuildHierarchy(DiContainer container, bool landscapeOrientation = true,
+        public static UIManager BuildHierarchy(IDependencyContainer container, bool landscapeOrientation = true,
             Vector2? refResolution = null)
         {
             if (_container != null)
@@ -389,12 +386,10 @@ namespace wLib.UIStack
                     var atts = factoryType.GetCustomAttributes(typeof(CustomWidgetFactoryAttribute), true);
                     if (atts.Length <= 0) { continue; }
 
-                    var att = atts[0] as CustomWidgetFactoryAttribute;
-                    if (att == null) { continue; }
+                    if (!(atts[0] is CustomWidgetFactoryAttribute att)) { continue; }
 
 //                        Debug.Log("Collect " + att.WidgetType);
-                    var factoryInstance = Activator.CreateInstance(factoryType) as IWidgetFactory;
-                    if (factoryInstance == null) { continue; }
+                    if (!(Activator.CreateInstance(factoryType) is IWidgetFactory factoryInstance)) { continue; }
 
                     _container.Inject(factoryInstance);
                     factoryInstance.SetupFactory();
@@ -430,20 +425,12 @@ namespace wLib.UIStack
             }
 
             var useSpecifiedFactory = false;
-            IWidgetFactory factory;
-            if (!FactoryLookup.TryGetValue(resolveType, out factory))
+            if (!FactoryLookup.TryGetValue(resolveType, out var factory))
             {
                 while (factory == null && resolveType.BaseType != null)
                 {
                     resolveType = resolveType.BaseType;
                     FactoryLookup.TryGetValue(resolveType, out factory);
-                    if (factory != null)
-                    {
-                        //Too annoying.
-//                        Debug.LogWarningFormat(
-//                            "Widget factory not found for type: {0}, fallback to factory: {1}.",
-//                            typeof(T), factory);
-                    }
                 }
 
                 if (factory == null)
@@ -454,10 +441,11 @@ namespace wLib.UIStack
             }
             else { useSpecifiedFactory = true; }
 
+            // fallback
             if (useSpecifiedFactory)
             {
-                var genericFactory = factory as IWidgetFactory<T>;
-                genericFactory?.CreateInstance(this, widgetPath, assignedId, message, onCreated);
+                var specifiedFactory = factory as IWidgetFactory<T>;
+                specifiedFactory?.CreateInstance(this, widgetPath, assignedId, message, onCreated);
             }
             else
             {
@@ -493,8 +481,7 @@ namespace wLib.UIStack
 
         public Widget Get(int id)
         {
-            Widget targetComp;
-            if (!WidgetLookup.TryGetValue(id, out targetComp))
+            if (!WidgetLookup.TryGetValue(id, out var targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
             }
@@ -504,8 +491,7 @@ namespace wLib.UIStack
 
         public TUiComponent Get<TUiComponent>(int id) where TUiComponent : Widget
         {
-            Widget targetComp;
-            if (!WidgetLookup.TryGetValue(id, out targetComp))
+            if (!WidgetLookup.TryGetValue(id, out var targetComp))
             {
                 Debug.LogWarningFormat("Can't load widget of id: {0}.", id);
             }

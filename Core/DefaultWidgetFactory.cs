@@ -10,8 +10,7 @@ namespace wLib.UIStack
     [CustomWidgetFactory(typeof(Widget))]
     public class DefaultWidgetFactory : IWidgetFactory<Widget>
     {
-        [Inject]
-        private DiContainer _container;
+        private readonly IDependencyContainer _container;
 
         private readonly List<WidgetDatabase> _databases;
 
@@ -21,6 +20,7 @@ namespace wLib.UIStack
 
         public DefaultWidgetFactory()
         {
+            _container = Context.GlobalContext.Container;
             _databases = Resources.LoadAll<WidgetDatabase>("").ToList();
             Debug.Log($"Found {_databases.Count} widget databases.");
         }
